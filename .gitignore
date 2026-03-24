@@ -1,0 +1,31 @@
+# Xcode
+DerivedData/
+build/
+*.xcuserstate
+*.xcscmblueprint
+xcuserdata/
+
+# Swift Package Manager
+.build/
+Packages/
+
+# Config with secrets
+*.xcconfig
+
+# Python
+scripts/.venv/
+scripts/.env
+scripts/__pycache__/
+*.pyc
+
+# Generated question files
+pending_review.json
+scripts/pending_review.json
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# CocoaPods (if ever used)
+Pods/
