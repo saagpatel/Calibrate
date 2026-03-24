@@ -16,6 +16,9 @@ struct CalibrateApp: App {
         let configuration = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
+            // Manual CK sync via UserService/LeaderboardService.
+            // Not using automatic SwiftData-CK sync — we selectively sync
+            // answers/profile to private DB and read questions from public DB.
             cloudKitDatabase: .none
         )
         do {

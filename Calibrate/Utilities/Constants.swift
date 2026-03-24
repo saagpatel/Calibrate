@@ -39,4 +39,59 @@ enum Constants {
         static let category = "science"
         static let explanation = "Adults have 206 bones — babies are born with about 270, but many fuse together as they grow."
     }
+
+    enum Cache {
+        static let ttlDays = 7
+    }
+
+    enum CloudKitFields {
+        enum Question {
+            static let questionID = "questionID"
+            static let text = "text"
+            static let category = "category"
+            static let groundTruthValue = "groundTruthValue"
+            static let groundTruthUnit = "groundTruthUnit"
+            static let groundTruthDate = "groundTruthDate"
+            static let isEvergreen = "isEvergreen"
+            static let sourceURL = "sourceURL"
+            static let explanation = "explanation"
+            static let difficulty = "difficulty"
+            static let isApproved = "isApproved"
+        }
+
+        enum DailySet {
+            static let utcDate = "utcDate"
+            static let questionIDs = "questionIDs"
+            static let publishedAt = "publishedAt"
+        }
+
+        enum LeaderboardEntry {
+            static let userRecordName = "userRecordName"
+            static let displayName = "displayName"
+            static let calibrationScore = "calibrationScore"
+            static let totalAnswered = "totalAnswered"
+            static let lastUpdated = "lastUpdated"
+            static let isPremium = "isPremium"
+        }
+
+        enum Answer {
+            static let questionID = "questionID"
+            static let utcDate = "utcDate"
+            static let pointEstimate = "pointEstimate"
+            static let lower50 = "lower50"
+            static let upper50 = "upper50"
+            static let lower90 = "lower90"
+            static let upper90 = "upper90"
+            static let submittedAt = "submittedAt"
+        }
+
+        enum UserProfile {
+            static let displayName = "displayName"
+            static let currentStreak = "currentStreak"
+            static let longestStreak = "longestStreak"
+            static let totalQuestionsAnswered = "totalQuestionsAnswered"
+            static let calibrationScore = "calibrationScore"
+            static let lastCompletedUTCDate = "lastCompletedUTCDate"
+        }
+    }
 }

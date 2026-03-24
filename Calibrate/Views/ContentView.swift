@@ -11,6 +11,13 @@ struct ContentView: View {
             NavigationStack {
                 CalibrationDashboardView()
                     .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            NavigationLink {
+                                LeaderboardView()
+                            } label: {
+                                Image(systemName: "trophy")
+                            }
+                        }
                         ToolbarItem(placement: .topBarTrailing) {
                             NavigationLink {
                                 SettingsView()

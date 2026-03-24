@@ -175,7 +175,7 @@ struct DailySetView: View {
         }
 
         do {
-            let set = try QuestionService.fetchDailySet(for: today, in: modelContext)
+            let set = try await QuestionService.fetchDailySet(for: today, in: modelContext)
             let qs = try QuestionService.fetchQuestions(for: set, in: modelContext)
             dailySet = set
             questions = qs
@@ -286,6 +286,28 @@ struct DailySetView: View {
         } catch {
             // Non-fatal: answers are in memory; log and continue
             print("[DailySetView] modelContext.save failed: \(error)")
+        }
+
+        // Fire-and-forget CloudKit sync
+        let answersToSync = newAnswers
+        let todayDate = today
+        let profileToSync = profile
+        let scoreToSync: Double? = {
+            if case .result(let data) = afterResult { return data.score }
+            return nil
+        }()
+
+        Task {
+            await UserService.syncAnswersToCK(answers: answersToSync, utcDate: todayDate)
+            if let prof = profileToSync, let score = scoreToSync {
+                await UserService.syncProfileToCK(profile: prof, calibrationScore: score)
+                await LeaderboardService.upsertEntry(
+                    displayName: prof.displayName,
+                    calibrationScore: score,
+                    totalAnswered: prof.totalQuestionsAnswered,
+                    isPremium: prof.isPremiumCached
+                )
+            }
         }
 
         submittedAnswers = newAnswers

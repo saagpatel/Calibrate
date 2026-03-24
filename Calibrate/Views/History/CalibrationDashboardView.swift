@@ -5,6 +5,7 @@ struct CalibrationDashboardView: View {
     @Query private var answers: [Answer]
     @Query private var questions: [Question]
     @Query private var profiles: [UserProfile]
+    @State private var userRank: LeaderboardEntry?
 
     private var profile: UserProfile? { profiles.first }
 
@@ -50,7 +51,9 @@ struct CalibrationDashboardView: View {
                 heroSection
                 scoreCardsSection
                 hitRatesSection
+                calibrationCurveSection
                 streakSection
+                leaderboardRankCard
                 ctaSection
             }
             .padding(.horizontal, 20)
@@ -395,6 +398,68 @@ struct CalibrationDashboardView: View {
                     .foregroundStyle(.white)
                 }
             }
+        }
+    }
+
+    // MARK: - Calibration Curve Section
+
+    private var calibrationCurveSection: some View {
+        PremiumLockOverlay(isLocked: !(profile?.isPremiumCached ?? false)) {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Calibration Curve")
+                    .font(.headline)
+                    .fontWeight(.bold)
+                CalibrationCurveView(answersWithTruth: answersWithTruth)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(.secondarySystemBackground))
+            )
+        }
+    }
+
+    // MARK: - Leaderboard Rank Card
+
+    private var leaderboardRankCard: some View {
+        Group {
+            if let rank = userRank {
+                NavigationLink(destination: LeaderboardView()) {
+                    HStack(spacing: 16) {
+                        Image(systemName: "trophy.fill")
+                            .font(.title2)
+                            .foregroundStyle(.yellow)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Leaderboard")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.secondary)
+                                .textCase(.uppercase)
+                                .tracking(0.8)
+                            Text(String(format: "Score: %.1f", rank.calibrationScore))
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color(.secondarySystemBackground))
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .task {
+            userRank = await LeaderboardService.fetchUserEntry()
         }
     }
 
