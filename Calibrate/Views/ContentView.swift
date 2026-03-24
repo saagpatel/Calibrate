@@ -33,5 +33,6 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+        .environmentObject(PremiumStore())
         .modelContainer(for: [Answer.self, Question.self, UserProfile.self], inMemory: true)
 }

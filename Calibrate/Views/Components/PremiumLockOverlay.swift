@@ -4,6 +4,8 @@ struct PremiumLockOverlay<Content: View>: View {
     let isLocked: Bool
     @ViewBuilder let content: Content
 
+    @State private var showUpgrade = false
+
     var body: some View {
         content
             .blur(radius: isLocked ? 6 : 0)
@@ -14,6 +16,9 @@ struct PremiumLockOverlay<Content: View>: View {
                 }
             }
             .animation(.easeInOut(duration: 0.2), value: isLocked)
+            .sheet(isPresented: $showUpgrade) {
+                PremiumUpgradeView()
+            }
     }
 
     private var lockedOverlay: some View {
@@ -38,7 +43,7 @@ struct PremiumLockOverlay<Content: View>: View {
                 }
 
                 Button("Learn More") {
-                    // StoreKit paywall integration is handled in Phase 3
+                    showUpgrade = true
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.regular)

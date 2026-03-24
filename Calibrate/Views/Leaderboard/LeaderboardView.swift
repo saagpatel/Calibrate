@@ -1,10 +1,13 @@
 import SwiftUI
 
 struct LeaderboardView: View {
+    @EnvironmentObject private var premiumStore: PremiumStore
     @State private var entries: [LeaderboardEntry] = []
     @State private var userEntry: LeaderboardEntry? = nil
     @State private var isLoading = false
     @State private var errorMessage: String? = nil
+    @State private var showFriendGroups = false
+    @State private var showUpgrade = false
 
     private let displayCount = 20
 
@@ -22,6 +25,25 @@ struct LeaderboardView: View {
         }
         .navigationTitle("Leaderboard")
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    if premiumStore.isPremium {
+                        showFriendGroups = true
+                    } else {
+                        showUpgrade = true
+                    }
+                } label: {
+                    Image(systemName: "person.2")
+                }
+            }
+        }
+        .navigationDestination(isPresented: $showFriendGroups) {
+            FriendGroupView()
+        }
+        .sheet(isPresented: $showUpgrade) {
+            PremiumUpgradeView()
+        }
         .task { await loadData() }
         .refreshable { await loadData() }
     }
@@ -254,4 +276,5 @@ private struct LeaderboardRowView: View {
     NavigationStack {
         LeaderboardView()
     }
+    .environmentObject(PremiumStore())
 }

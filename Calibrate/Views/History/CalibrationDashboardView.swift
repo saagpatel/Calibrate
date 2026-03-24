@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct CalibrationDashboardView: View {
+    @EnvironmentObject private var premiumStore: PremiumStore
     @Query private var answers: [Answer]
     @Query private var questions: [Question]
     @Query private var profiles: [UserProfile]
@@ -404,7 +405,7 @@ struct CalibrationDashboardView: View {
     // MARK: - Calibration Curve Section
 
     private var calibrationCurveSection: some View {
-        PremiumLockOverlay(isLocked: !(profile?.isPremiumCached ?? false)) {
+        PremiumLockOverlay(isLocked: !premiumStore.isPremium) {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Calibration Curve")
                     .font(.headline)
@@ -483,5 +484,6 @@ struct CalibrationDashboardView: View {
     NavigationStack {
         CalibrationDashboardView()
     }
+    .environmentObject(PremiumStore())
     .modelContainer(for: [Answer.self, Question.self, UserProfile.self], inMemory: true)
 }

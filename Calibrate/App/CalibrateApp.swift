@@ -5,6 +5,7 @@ import CloudKit
 @main
 struct CalibrateApp: App {
     let modelContainer: ModelContainer
+    @StateObject private var premiumStore = PremiumStore()
 
     init() {
         let schema = Schema([
@@ -34,8 +35,10 @@ struct CalibrateApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(premiumStore)
                 .task {
                     await seedAndSetupIfNeeded()
+                    await premiumStore.load()
                 }
         }
         .modelContainer(modelContainer)
