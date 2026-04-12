@@ -22,8 +22,7 @@ Calibrate is a daily iOS prediction game where users submit 50% and 90% confiden
 - CloudKit container ID: `iCloud.com.calibrate.app`
 
 ## Current Phase
-**Phase 0: Foundation + Calibration Engine**
-See IMPLEMENTATION-ROADMAP.md for full phase details and acceptance criteria.
+**Phase 3: Complete** — StoreKit 2 premium subscriptions, CloudKit leaderboard, friend groups, advanced calibration curve, privacy manifest. See IMPLEMENTATION-ROADMAP.md for full phase details and acceptance criteria.
 
 ## Key Decisions
 | Decision | Choice | Why |

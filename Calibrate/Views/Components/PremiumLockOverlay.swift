@@ -4,6 +4,7 @@ struct PremiumLockOverlay<Content: View>: View {
     let isLocked: Bool
     @ViewBuilder let content: Content
 
+    @EnvironmentObject private var premiumStore: PremiumStore
     @State private var showUpgrade = false
 
     var body: some View {
@@ -18,6 +19,7 @@ struct PremiumLockOverlay<Content: View>: View {
             .animation(.easeInOut(duration: 0.2), value: isLocked)
             .sheet(isPresented: $showUpgrade) {
                 PremiumUpgradeView()
+                    .environmentObject(premiumStore)
             }
     }
 

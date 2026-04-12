@@ -43,6 +43,7 @@ struct LeaderboardView: View {
         }
         .sheet(isPresented: $showUpgrade) {
             PremiumUpgradeView()
+                .environmentObject(premiumStore)
         }
         .task { await loadData() }
         .refreshable { await loadData() }

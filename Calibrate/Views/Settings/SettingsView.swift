@@ -2,11 +2,13 @@ import SwiftUI
 import SwiftData
 
 struct SettingsView: View {
+    @EnvironmentObject private var premiumStore: PremiumStore
     @AppStorage(Constants.UserDefaultsKeys.isAdminMode) private var isAdminMode = false
     @Query(filter: #Predicate<Question> { $0.isApproved == true })
     private var approvedQuestions: [Question]
     @State private var tapCount = 0
     @State private var tapResetTask: Task<Void, Never>?
+    @State private var showUpgrade = false
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0"
@@ -14,6 +16,31 @@ struct SettingsView: View {
 
     var body: some View {
         List {
+            if !premiumStore.isPremium {
+                Section {
+                    Button {
+                        showUpgrade = true
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "star.fill")
+                                .foregroundStyle(.yellow)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Upgrade to Premium")
+                                    .fontWeight(.semibold)
+                                Text("Advanced calibration curve, friend groups & more")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    .tint(.primary)
+                }
+            }
+
             Section("About") {
                 HStack {
                     Text("Version")
@@ -51,6 +78,10 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("Settings")
+        .sheet(isPresented: $showUpgrade) {
+            PremiumUpgradeView()
+                .environmentObject(premiumStore)
+        }
     }
 }
 
@@ -58,4 +89,5 @@ struct SettingsView: View {
     NavigationStack {
         SettingsView()
     }
+    .environmentObject(PremiumStore())
 }
