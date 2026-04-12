@@ -25,13 +25,6 @@ targets:
       - path: Calibrate/Resources/seed_questions.json
         optional: true
       - path: Calibrate/Resources/Products.storekit
-    scheme:
-      testAction:
-        config: Debug
-        storeKitConfiguration: Calibrate/Resources/Products.storekit
-      runAction:
-        config: Debug
-        storeKitConfiguration: Calibrate/Resources/Products.storekit
     settings:
       base:
         INFOPLIST_FILE: Calibrate/Info.plist
@@ -56,3 +49,18 @@ targets:
     settings:
       base:
         INFOPLIST_FILE: CalibrateTests/Info.plist
+
+schemes:
+  Calibrate:
+    build:
+      targets:
+        Calibrate: all
+        CalibrateTests: [test]
+    run:
+      config: Debug
+      storeKitConfiguration: Calibrate/Resources/Products.storekit
+    test:
+      config: Debug
+      storeKitConfiguration: Calibrate/Resources/Products.storekit
+      targets:
+        - CalibrateTests
