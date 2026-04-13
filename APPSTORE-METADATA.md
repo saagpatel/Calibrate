@@ -100,9 +100,9 @@ Character count: 124
 
 | Field | URL |
 |---|---|
-| Support URL | https://[placeholder]/calibrate/support |
+| Support URL | https://github.com/saagpatel/Calibrate/issues |
 | Marketing URL | https://[placeholder]/calibrate |
-| Privacy Policy URL | https://[placeholder]/calibrate/privacy |
+| Privacy Policy URL | https://github.com/saagpatel/Calibrate/blob/main/PRIVACY.md |
 
 *Replace with actual URLs before submission. The privacy policy must address: iCloud private database for answer history, CloudKit public database for leaderboard display name + calibration score, no third-party data sharing, StoreKit 2 subscription handling.*
 
