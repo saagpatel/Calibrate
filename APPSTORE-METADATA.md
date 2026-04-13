@@ -214,3 +214,6 @@ Character count: 124
 - [ ] Subscription group created: "Calibrate Premium" — both products in the same group so users cannot hold both simultaneously
 - [ ] TestFlight: minimum 14 days of daily use, 0 crash reports, calibration scores show realistic variance, at least 1 complete subscription purchase + cancellation tested in production sandbox
 - [ ] App Review Notes: include admin view explanation; note CloudKit requirement for leaderboard; include StoreKit sandbox instructions
+
+## Copyright
+© 2026 saagpatel
