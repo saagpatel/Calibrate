@@ -29,7 +29,10 @@ targets:
       base:
         INFOPLIST_FILE: Calibrate/Info.plist
         CODE_SIGN_ENTITLEMENTS: Calibrate/Calibrate.entitlements
-        PRODUCT_BUNDLE_IDENTIFIER: com.calibrate.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.calibrat.app
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "Apple Distribution: SAAGAR I PATEL (3TGZFKFNA4)"
+        PROVISIONING_PROFILE_SPECIFIER: Calibrate App Store
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     entitlements:
       path: Calibrate/Calibrate.entitlements
