@@ -1,0 +1,1 @@
+calibration,estimation,trivia,forecasting,prediction,quiz,knowledge,accuracy,statistics,daily

@@ -1,0 +1,48 @@
+Are you as confident as you think you are?
+
+Most people are overconfident — their "90% sure" intervals contain the right answer only 60% of the time. Calibrate trains you to fix this, one set of questions per day.
+
+Every day, Calibrate gives you five numeric estimation questions: What is the diameter of Mars? How many episodes did Friends run? What was Apple's revenue last quarter? For each question, you don't just guess a single number — you give a range you're 50% confident in and a wider range you're 90% confident in. Then you find out how you did.
+
+Over time, your calibration score tells you the truth about your own uncertainty. A perfect score means your 50% intervals contain the answer 50% of the time, and your 90% intervals contain it 90% of the time. Getting there is harder than it sounds — and more useful than almost any other form of intellectual training.
+
+How it works
+
+For each question, enter five values:
+- Your inner range (50% confidence interval)
+- Your outer range (90% confidence interval)
+- Your point estimate
+
+After all five questions are locked in, Calibrate reveals every answer at once — no peeking between questions. You see exactly which intervals hit, which missed, and by how much. Your calibration score updates immediately.
+
+Two scores, two skills
+
+Calibrate tracks two separate dimensions of prediction quality:
+
+- Calibration score — measures how accurately your stated confidence matches your observed accuracy. This is the skill of knowing what you don't know.
+- Knowledge score — measures how close your point estimates are to the truth. This is how much you actually know.
+
+Both scores are tracked over your last 30 questions (recent performance) and your full history (career performance), so you can see whether you are genuinely improving.
+
+Compete on what matters
+
+The global leaderboard ranks players by calibration score, not knowledge score. This means the leaderboard rewards intellectual honesty — the ability to accurately represent your own uncertainty — rather than trivia recall. A well-calibrated generalist will outrank an overconfident expert.
+
+Premium features
+
+Calibrate is free to play forever. The core daily game, calibration scores, streaks, and global leaderboard are all free.
+
+Calibrate Premium adds:
+- Calibration Curve — a reliability diagram showing exactly where your confidence drifts from reality at the 50% and 90% confidence levels
+- Friend Groups — create or join a private group leaderboard with a 6-character invite code; compete with people you know
+- Domain Breakdown — see your calibration score broken down by question category (geography, science, economics, history, pop culture, current events)
+
+Premium is available as a monthly subscription ($2.99/month with 3-day free trial) or an annual subscription ($14.99/year with 7-day free trial). Cancel any time. Subscriptions renew automatically unless cancelled at least 24 hours before the end of the current period.
+
+Daily rhythm
+
+Questions refresh at midnight UTC. The same set goes to every player on a given day, which means your score on today's set is directly comparable to everyone else's. Push notifications are available (opt-in) to remind you when your daily set is ready.
+
+Privacy
+
+Calibrate has no advertising. Your answer history is stored in your own iCloud private container — Calibrate's servers never see your individual answers. Only your aggregated calibration score and display name are shared with the public leaderboard. No tracking, no third-party SDKs.
