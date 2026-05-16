@@ -46,3 +46,45 @@ Calibrate is a daily iOS prediction game where users submit 50% and 90% confiden
 - Do not allow the app to proceed without confirming the 90% interval contains the 50% interval (enforce in IntervalInputWidget binding logic, not on submit)
 - Do not build the leaderboard, friend groups, or StoreKit integration in Phase 0 or Phase 1
 - Do not use force unwraps — zero tolerance
+
+<!-- portfolio-context:start -->
+# Portfolio Context
+
+## What This Project Is
+
+Calibrate is a daily iOS prediction game where users submit 50% and 90% confidence intervals for 5 numeric estimation questions. The app tracks calibration accuracy over time — whether stated confidence matches observed accuracy — and surfaces this as a long-term skill score with a global leaderboard.
+
+## Current State
+
+**Phase 3: Complete** — StoreKit 2 premium subscriptions, CloudKit leaderboard, friend groups, advanced calibration curve, privacy manifest. See IMPLEMENTATION-ROADMAP.md for full phase details and acceptance criteria.
+
+## Stack
+
+- Language: Swift 5.10+
+- UI: SwiftUI (iOS 17.0+ deployment target)
+- Local persistence: SwiftData (iOS 17)
+- Remote sync: CloudKit (iCloud private + public containers)
+- IAP: StoreKit 2
+- Charts: Swift Charts (iOS 16+)
+- Question generation: Python 3.12 + Anthropic SDK (local CLI, not shipped in app)
+
+## How To Run
+
+Build and run the `Calibrate` scheme on your device or simulator from Xcode.
+
+## Known Risks
+
+- Do not add features not in the current phase of IMPLEMENTATION-ROADMAP.md
+- Do not use UIKit components when a SwiftUI equivalent exists
+- Do not store the Claude API key anywhere in the Xcode project — it's a local Python CLI tool only
+- Do not write to CloudKit public DB from the app except for leaderboard entries and friend groups (Phase 2+)
+- Do not use Combine — Swift concurrency only
+- Do not allow the app to proceed without confirming the 90% interval contains the 50% interval (enforce in IntervalInputWidget binding logic, not on submit)
+- Do not build the leaderboard, friend groups, or StoreKit integration in Phase 0 or Phase 1
+- Do not use force unwraps — zero tolerance
+
+## Next Recommended Move
+
+Use this context plus the README and supporting docs to resume the next active task, then promote the repo beyond minimum-viable by capturing a dedicated handoff, roadmap, or discovery artifact.
+
+<!-- portfolio-context:end -->
