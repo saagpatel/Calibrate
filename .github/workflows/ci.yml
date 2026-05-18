@@ -3,6 +3,9 @@ on:
   push:
     branches: [main]
   pull_request:
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: macos-latest
@@ -13,4 +16,5 @@ jobs:
           xcodebuild build \
             -scheme Calibrate \
             -project Calibrate.xcodeproj \
-            -destination 'generic/platform=iOS'
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO
