@@ -16,4 +16,5 @@ jobs:
           xcodebuild build \
             -scheme Calibrate \
             -project Calibrate.xcodeproj \
-            -destination 'generic/platform=iOS'
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO
