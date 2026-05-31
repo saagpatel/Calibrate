@@ -12,7 +12,8 @@ Calibrate is a daily iOS prediction game that measures and trains your calibrati
 - **Dual scoring** — Calibration Score (interval accuracy) and Knowledge Score (point-estimate MAPE) tracked independently
 - **Swift Charts visualization** — score history, confidence interval hit rates, and performance trends
 - **CloudKit sync** — answers and scores sync privately across your devices
-- **StoreKit 2** — optional premium question packs
+- **StoreKit 2 subscriptions** — monthly ($2.99) and annual ($14.99) plans unlocking premium features (calibration curve, friend groups, domain breakdown)
+- **Global leaderboard** — CloudKit-backed top-100 rankings by calibration score with personal rank display
 - **Python question CLI** — Anthropic SDK-powered authoring tool (dev-time only, not shipped)
 
 ## Quick Start
