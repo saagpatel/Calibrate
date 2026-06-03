@@ -80,3 +80,8 @@ Build and run the `Calibrate` scheme on your device or simulator from Xcode.
 Use this context plus the README and supporting docs to resume the next active task, then promote the repo beyond minimum-viable by capturing a dedicated handoff, roadmap, or discovery artifact.
 
 <!-- portfolio-context:end -->
+
+<!-- secondbrain-breadcrumb -->
+## SecondBrain knowledge vault
+
+Prior lessons, decisions, and context for this project live in SecondBrain at `wiki/maps/projects/calibrate.md`. The whole vault is searchable via the `engraph` MCP — query it for this project + its stack before non-trivial work.
