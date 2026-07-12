@@ -19,6 +19,11 @@ enum QuestionServiceError: LocalizedError {
     }
 }
 
+enum QuestionRemoteFetchPolicy: Equatable {
+    case cloudKit
+    case disabled
+}
+
 @MainActor
 struct QuestionService {
 
@@ -28,7 +33,11 @@ struct QuestionService {
     /// 1. SwiftData cache (if fresh within ttlDays)
     /// 2. CloudKit public DB
     /// 3. Stale cache or local deterministic generation
-    static func fetchDailySet(for utcDate: String, in modelContext: ModelContext) async throws -> DailySet {
+    static func fetchDailySet(
+        for utcDate: String,
+        in modelContext: ModelContext,
+        remoteFetchPolicy: QuestionRemoteFetchPolicy = .cloudKit
+    ) async throws -> DailySet {
         // Layer 1: Fresh SwiftData cache
         if let cached = try fetchCachedDailySet(for: utcDate, in: modelContext) {
             let age = DateUtils.daysBetween(
@@ -39,7 +48,8 @@ struct QuestionService {
                 return cached
             }
             // Cache exists but is stale — try CK before falling back to it
-            if let ckSet = try? await fetchDailySetFromCK(utcDate: utcDate, in: modelContext) {
+            if remoteFetchPolicy == .cloudKit,
+               let ckSet = try? await fetchDailySetFromCK(utcDate: utcDate, in: modelContext) {
                 return ckSet
             }
             // Layer 3a: Use stale cache rather than fail
@@ -47,7 +57,8 @@ struct QuestionService {
         }
 
         // Layer 2: CloudKit public DB
-        if let ckSet = try? await fetchDailySetFromCK(utcDate: utcDate, in: modelContext) {
+        if remoteFetchPolicy == .cloudKit,
+           let ckSet = try? await fetchDailySetFromCK(utcDate: utcDate, in: modelContext) {
             return ckSet
         }
 

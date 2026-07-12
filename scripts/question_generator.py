@@ -4,23 +4,22 @@
 Dependencies: pip install anthropic requests
 Usage:
   Generate: python question_generator.py --category economics --count 20 --output pending_review.json
-  Upload:   python question_generator.py upload --input Calibrate/Resources/seed_questions.json --days 90
+  Preview:  python question_generator.py upload --input Calibrate/Resources/seed_questions.json --days 90
+  Apply:    CLOUDKIT_WEB_TOKEN=... python question_generator.py upload --input Calibrate/Resources/seed_questions.json --days 90 --apply
 
 Claude API key must be in macOS Keychain under service "calibrate-claude-api".
 Add it once:
     security add-generic-password -s "calibrate-claude-api" -a "apikey" -w "sk-ant-..."
 """
 
-import anthropic
 import json
 import argparse
 import subprocess
 import sys
 import os
 import uuid
+import math
 from datetime import date, datetime, timedelta, timezone
-
-import requests
 
 VALID_CATEGORIES = [
     "geography",
@@ -30,6 +29,44 @@ VALID_CATEGORIES = [
     "popCulture",
     "currentEvents",
 ]
+
+
+def validate_questions(questions: object) -> list[dict]:
+    if not isinstance(questions, list):
+        raise ValueError("Question input must be a JSON array")
+    seen_texts: set[str] = set()
+    validated: list[dict] = []
+    for index, question in enumerate(questions, start=1):
+        if not isinstance(question, dict):
+            raise ValueError(f"Question {index} must be an object")
+        text = str(question.get("text", "")).strip()
+        if not text:
+            raise ValueError(f"Question {index} has empty text")
+        if text in seen_texts:
+            raise ValueError(f"Question {index} duplicates an earlier question")
+        seen_texts.add(text)
+        if question.get("category") not in VALID_CATEGORIES:
+            raise ValueError(f"Question {index} has an unsupported category")
+        if not str(question.get("explanation", "")).strip():
+            raise ValueError(f"Question {index} has an empty explanation")
+        if not str(question.get("groundTruthUnit", "")).strip():
+            raise ValueError(f"Question {index} has an empty groundTruthUnit")
+        source_url = str(question.get("sourceURL", ""))
+        if not source_url.startswith("https://"):
+            raise ValueError(f"Question {index} sourceURL must use HTTPS")
+        difficulty = question.get("estimatedDifficulty", question.get("difficulty", 0.5))
+        if (not isinstance(difficulty, (int, float)) or
+                not math.isfinite(difficulty) or not 0 <= difficulty <= 1):
+            raise ValueError(f"Question {index} difficulty must be between 0 and 1")
+        truth = question.get("groundTruthValue")
+        if not isinstance(truth, (int, float)) or not math.isfinite(truth):
+            raise ValueError(f"Question {index} groundTruthValue must be numeric")
+        try:
+            date.fromisoformat(str(question.get("groundTruthDate", "")))
+        except ValueError as exc:
+            raise ValueError(f"Question {index} groundTruthDate must use YYYY-MM-DD") from exc
+        validated.append(question)
+    return validated
 
 CLOUDKIT_BASE_URL = "https://api.apple-cloudkit.com/database/1/iCloud.com.calibrate.app"
 CLOUDKIT_CONTAINER = "iCloud.com.calibrate.app"
@@ -78,6 +115,13 @@ def get_api_key() -> str:
 
 
 def generate_questions(category: str, count: int) -> list[dict]:
+    try:
+        import anthropic
+    except ImportError as exc:
+        raise RuntimeError(
+            "Question generation requires the optional anthropic dependency. "
+            "Install scripts/requirements.txt in a virtual environment."
+        ) from exc
     client = anthropic.Anthropic(api_key=get_api_key())
     user_prompt = (
         f"Generate {count} estimation questions in the '{category}' category. "
@@ -177,6 +221,13 @@ def cloudkit_modify_records(
     environment: str,
     record_type: str,
 ) -> dict:
+    try:
+        import requests
+    except ImportError as exc:
+        raise RuntimeError(
+            "CloudKit upload requires the optional requests dependency. "
+            "Install scripts/requirements.txt in a virtual environment."
+        ) from exc
     url = (
         f"{CLOUDKIT_BASE_URL}/{environment}/public/records/modify"
         f"?ckAPIToken={ck_token}"
@@ -186,9 +237,26 @@ def cloudkit_modify_records(
         for r in records
     ]
     payload = {"operations": operations}
-    resp = requests.post(url, json=payload, timeout=30)
-    resp.raise_for_status()
-    return resp.json()
+    try:
+        resp = requests.post(url, json=payload, timeout=30)
+        resp.raise_for_status()
+    except requests.RequestException as exc:
+        detail = ""
+        if exc.response is not None:
+            detail = f" Response: {exc.response.text[:500]}"
+        raise RuntimeError(f"CloudKit request failed: {exc}.{detail}") from exc
+    response = resp.json()
+    record_errors = [
+        record for record in response.get("records", [])
+        if record.get("serverErrorCode")
+    ]
+    if record_errors:
+        summaries = ", ".join(
+            f"{record.get('recordName', 'unknown')}: {record.get('serverErrorCode')}"
+            for record in record_errors[:5]
+        )
+        raise RuntimeError(f"CloudKit rejected {len(record_errors)} record(s): {summaries}")
+    return response
 
 
 def make_question_record(q: dict) -> dict:
@@ -253,28 +321,29 @@ def upload_in_batches(
             cloudkit_modify_records(batch, ck_token, environment, label)
             uploaded += len(batch)
             print("OK")
-        except requests.HTTPError as exc:
+        except RuntimeError as exc:
             print(f"FAILED — {exc}")
-            print(f"  Response: {exc.response.text[:500]}")
             sys.exit(1)
     return uploaded
 
 
 def cmd_upload(args: argparse.Namespace) -> None:
-    ck_token = args.ck_token or os.environ.get("CLOUDKIT_WEB_TOKEN", "")
-    if not ck_token:
-        print("ERROR: CloudKit token required. Pass --ck-token or set CLOUDKIT_WEB_TOKEN env var.")
-        sys.exit(1)
-
     input_path = args.input
     try:
         with open(input_path) as f:
-            questions = json.load(f)
+            questions = validate_questions(json.load(f))
     except FileNotFoundError:
         print(f"ERROR: Input file not found: {input_path}")
         sys.exit(1)
     except json.JSONDecodeError as exc:
         print(f"ERROR: Invalid JSON in {input_path}: {exc}")
+        sys.exit(1)
+    except ValueError as exc:
+        print(f"ERROR: {exc}")
+        sys.exit(1)
+
+    if args.days < 1:
+        print("ERROR: --days must be at least 1.")
         sys.exit(1)
 
     # Assign stable IDs to any question missing one (deterministic from text)
@@ -291,6 +360,19 @@ def cmd_upload(args: argparse.Namespace) -> None:
     start_date = date.today()
     daily_sets = build_daily_sets(questions, start_date, args.days)
     daily_set_records = [make_daily_set_record(ds) for ds in daily_sets]
+
+    print(f"Prepared {len(question_records)} questions and {len(daily_set_records)} daily sets for {args.environment}.")
+    if not args.apply:
+        print("Dry run only. Re-run with --apply to write to CloudKit.")
+        return
+    if args.environment == "production" and args.confirm_production != "PRODUCTION":
+        print("ERROR: Production writes require --confirm-production PRODUCTION.")
+        sys.exit(1)
+
+    ck_token = os.environ.get("CLOUDKIT_WEB_TOKEN", "")
+    if not ck_token:
+        print("ERROR: CloudKit token required in the CLOUDKIT_WEB_TOKEN environment variable.")
+        sys.exit(1)
 
     print(f"\nUploading to CloudKit ({args.environment})...")
 
@@ -326,15 +408,20 @@ def main() -> None:
         help="Number of daily sets to generate (default: 90)",
     )
     upload_parser.add_argument(
-        "--ck-token",
-        default=None,
-        help="CloudKit Web Services API token (or set CLOUDKIT_WEB_TOKEN env var)",
-    )
-    upload_parser.add_argument(
         "--environment",
         default="development",
         choices=["development", "production"],
         help="CloudKit environment (default: development)",
+    )
+    upload_parser.add_argument(
+        "--apply",
+        action="store_true",
+        help="Perform the CloudKit writes; without this flag the command is a dry run",
+    )
+    upload_parser.add_argument(
+        "--confirm-production",
+        default="",
+        help="For production writes, must be set exactly to PRODUCTION",
     )
 
     # --- generate args (top-level, backward compat) ---
@@ -351,9 +438,11 @@ def main() -> None:
     # Default: generate behavior (backward compat)
     if not args.category:
         parser.error("--category is required when not using a subcommand")
+    if args.count < 1:
+        parser.error("--count must be at least 1")
 
     print(f"Generating {args.count} {args.category} questions...")
-    questions = generate_questions(args.category, args.count)
+    questions = validate_questions(generate_questions(args.category, args.count))
 
     # Add metadata
     for q in questions:

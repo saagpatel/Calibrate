@@ -15,6 +15,7 @@ struct AnswerDraft {
 
 struct DailySetView: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var premiumStore: PremiumStore
     @Query private var allAnswers: [Answer]
     @Query private var profiles: [UserProfile]
 
@@ -284,8 +285,9 @@ struct DailySetView: View {
         do {
             try modelContext.save()
         } catch {
-            // Non-fatal: answers are in memory; log and continue
-            print("[DailySetView] modelContext.save failed: \(error)")
+            modelContext.rollback()
+            loadError = "Your answers could not be saved. No result was submitted. Please return to the dashboard and try again."
+            return
         }
 
         // Fire-and-forget CloudKit sync
@@ -305,7 +307,7 @@ struct DailySetView: View {
                     displayName: prof.displayName,
                     calibrationScore: score,
                     totalAnswered: prof.totalQuestionsAnswered,
-                    isPremium: prof.isPremiumCached
+                    isPremium: premiumStore.isPremium
                 )
             }
         }

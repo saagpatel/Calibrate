@@ -168,23 +168,22 @@ struct PremiumUpgradeView: View {
     // MARK: - Legal
 
     private var legalText: some View {
-        Text("By subscribing you agree to our ")
+        VStack(spacing: 10) {
+            Text("Payment is charged to your Apple Account when the purchase is confirmed. Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Manage or cancel subscriptions in your Apple Account settings.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            HStack(spacing: 16) {
+                if let termsURL = URL(string: Constants.Legal.termsOfUseURL) {
+                    Link("Terms of Use", destination: termsURL)
+                }
+                if let privacyURL = URL(string: Constants.Legal.privacyPolicyURL) {
+                    Link("Privacy Policy", destination: privacyURL)
+                }
+            }
             .font(.caption)
-            .foregroundStyle(.tertiary)
-        + Text("Terms of Use")
-            .font(.caption)
-            .foregroundStyle(.tertiary)
-            .underline()
-        + Text(" and ")
-            .font(.caption)
-            .foregroundStyle(.tertiary)
-        + Text("Privacy Policy")
-            .font(.caption)
-            .foregroundStyle(.tertiary)
-            .underline()
-        + Text(".")
-            .font(.caption)
-            .foregroundStyle(.tertiary)
+        }
     }
 }
 

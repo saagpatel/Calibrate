@@ -53,9 +53,9 @@ final class QuestionServiceTests: XCTestCase {
 
     func testSameDateReturnsSameQuestionIDs() async throws {
         let date = "2026-03-22"
-        let set1 = try await QuestionService.fetchDailySet(for: date, in: context)
-        let set2 = try await QuestionService.fetchDailySet(for: date, in: context)
-        let set3 = try await QuestionService.fetchDailySet(for: date, in: context)
+        let set1 = try await fetchDailySet(for: date)
+        let set2 = try await fetchDailySet(for: date)
+        let set3 = try await fetchDailySet(for: date)
 
         XCTAssertEqual(set1.questionIDs, set2.questionIDs, "Same date must return identical question IDs on second call.")
         XCTAssertEqual(set1.questionIDs, set3.questionIDs, "Same date must return identical question IDs on third call.")
@@ -64,8 +64,8 @@ final class QuestionServiceTests: XCTestCase {
     // MARK: - Test 2: Different dates return different question IDs
 
     func testDifferentDatesReturnDifferentQuestionIDs() async throws {
-        let set1 = try await QuestionService.fetchDailySet(for: "2026-03-22", in: context)
-        let set2 = try await QuestionService.fetchDailySet(for: "2026-03-23", in: context)
+        let set1 = try await fetchDailySet(for: "2026-03-22")
+        let set2 = try await fetchDailySet(for: "2026-03-23")
 
         XCTAssertNotEqual(set1.questionIDs, set2.questionIDs, "Different dates should produce different question selections.")
     }
@@ -73,7 +73,7 @@ final class QuestionServiceTests: XCTestCase {
     // MARK: - Test 3: Returns exactly 5 question IDs
 
     func testReturnsExactlyFiveQuestionIDs() async throws {
-        let dailySet = try await QuestionService.fetchDailySet(for: "2026-03-22", in: context)
+        let dailySet = try await fetchDailySet(for: "2026-03-22")
         XCTAssertEqual(dailySet.questionIDs.count, Constants.Calibration.questionsPerDay,
                        "DailySet must contain exactly \(Constants.Calibration.questionsPerDay) question IDs.")
     }
@@ -81,7 +81,7 @@ final class QuestionServiceTests: XCTestCase {
     // MARK: - Test 4: All returned IDs exist in the approved questions pool
 
     func testAllReturnedIDsExistInApprovedQuestions() async throws {
-        let dailySet = try await QuestionService.fetchDailySet(for: "2026-03-22", in: context)
+        let dailySet = try await fetchDailySet(for: "2026-03-22")
 
         let approvedDescriptor = FetchDescriptor<Question>(
             predicate: #Predicate<Question> { $0.isApproved == true }
@@ -104,7 +104,7 @@ final class QuestionServiceTests: XCTestCase {
         try context.save()
 
         do {
-            _ = try await QuestionService.fetchDailySet(for: "2026-03-22", in: context)
+            _ = try await fetchDailySet(for: "2026-03-22")
             XCTFail("Expected error to be thrown")
         } catch let error as QuestionServiceError {
             switch error {
@@ -120,8 +120,8 @@ final class QuestionServiceTests: XCTestCase {
 
     func testCachesResultAndDoesNotDuplicateDailySet() async throws {
         let date = "2026-03-22"
-        _ = try await QuestionService.fetchDailySet(for: date, in: context)
-        _ = try await QuestionService.fetchDailySet(for: date, in: context)
+        _ = try await fetchDailySet(for: date)
+        _ = try await fetchDailySet(for: date)
 
         let count = try countDailySets()
         XCTAssertEqual(count, 1, "Calling fetchDailySet twice for the same date must create exactly one DailySet record.")
@@ -130,7 +130,7 @@ final class QuestionServiceTests: XCTestCase {
     // MARK: - Test 7: fetchQuestions returns correct questions in order
 
     func testFetchQuestionsReturnsCorrectOrderedQuestions() async throws {
-        let dailySet = try await QuestionService.fetchDailySet(for: "2026-03-22", in: context)
+        let dailySet = try await fetchDailySet(for: "2026-03-22")
         let questions = try QuestionService.fetchQuestions(for: dailySet, in: context)
 
         XCTAssertEqual(questions.count, Constants.Calibration.questionsPerDay)
@@ -146,5 +146,72 @@ final class QuestionServiceTests: XCTestCase {
 
         let questions = try QuestionService.fetchQuestions(for: fakeSet, in: context)
         XCTAssertEqual(questions.count, 0, "Non-existent IDs should be silently dropped.")
+    }
+
+    func testImportRejectsInsecureSourceWithoutPartialWrites() throws {
+        let baseline = try context.fetch(FetchDescriptor<Question>()).count
+        let json = """
+        [{
+          "text": "Unsafe source?",
+          "category": "science",
+          "groundTruthValue": 1,
+          "groundTruthUnit": "unit",
+          "groundTruthDate": "2026-01-01",
+          "isEvergreen": true,
+          "sourceURL": "http://example.com/source",
+          "explanation": "A test explanation.",
+          "difficulty": 0.5
+        }]
+        """
+
+        let url = try temporaryJSONFile(contents: json)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        XCTAssertThrowsError(try ImportService.importFromURL(url, into: context))
+        XCTAssertEqual(try context.fetch(FetchDescriptor<Question>()).count, baseline)
+    }
+
+    func testImportDeduplicatesRepeatedQuestionsWithinFile() throws {
+        let item = """
+        {
+          "text": "A new unique question?",
+          "category": "science",
+          "groundTruthValue": 42,
+          "groundTruthUnit": "units",
+          "groundTruthDate": "2026-01-01",
+          "isEvergreen": true,
+          "sourceURL": "https://example.com/source",
+          "explanation": "A test explanation.",
+          "difficulty": 0.5
+        }
+        """
+        let url = try temporaryJSONFile(contents: "[\(item),\(item)]")
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let imported = try ImportService.importFromURL(url, into: context)
+
+        XCTAssertEqual(imported, 1)
+        let questions = try context.fetch(FetchDescriptor<Question>())
+        let importedQuestion = questions.first { $0.text == "A new unique question?" }
+        XCTAssertEqual(
+            importedQuestion?.id.uuidString.lowercased(),
+            "00000000-0000-0000-1f04-fde9dae09e22"
+        )
+    }
+
+    private func fetchDailySet(for date: String) async throws -> DailySet {
+        try await QuestionService.fetchDailySet(
+            for: date,
+            in: context,
+            remoteFetchPolicy: .disabled
+        )
+    }
+
+    private func temporaryJSONFile(contents: String) throws -> URL {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("json")
+        try Data(contents.utf8).write(to: url, options: .atomic)
+        return url
     }
 }

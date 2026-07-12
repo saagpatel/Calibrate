@@ -13,6 +13,7 @@ Calibrate is a daily iOS prediction game that measures and trains your calibrati
 - **Swift Charts visualization** — score history, confidence interval hit rates, and performance trends
 - **CloudKit sync** — answers and scores sync privately across your devices
 - **StoreKit 2 subscriptions** — monthly ($2.99) and annual ($14.99) plans unlocking premium features (calibration curve, friend groups, domain breakdown)
+- **Optional local reminder** — user-controlled 8:00 AM notification with no remote push service
 - **Global leaderboard** — CloudKit-backed top-100 rankings by calibration score with personal rank display
 - **Python question CLI** — Anthropic SDK-powered authoring tool (dev-time only, not shipped)
 
@@ -32,6 +33,12 @@ open Calibrate.xcodeproj
 
 ### Usage
 Build and run the `Calibrate` scheme on your device or simulator from Xcode.
+
+CloudKit-backed sync and leaderboards require a signed build with the app's iCloud entitlement. Core gameplay falls back to the bundled question bank when CloudKit is unavailable.
+
+## Privacy
+
+Calibrate uses private and public CloudKit databases for sync, leaderboard, and friend-group features. See [PRIVACY.md](PRIVACY.md) for the exact data flows. The app has no advertising SDKs or cross-app tracking.
 
 ## Tech Stack
 

@@ -53,6 +53,7 @@ struct CalibrationDashboardView: View {
                 scoreCardsSection
                 hitRatesSection
                 calibrationCurveSection
+                domainBreakdownSection
                 streakSection
                 leaderboardRankCard
                 ctaSection
@@ -421,6 +422,85 @@ struct CalibrationDashboardView: View {
         }
     }
 
+    // MARK: - Domain Breakdown Section
+
+    private var domainBreakdown: [DomainCalibration] {
+        let questionMap = Dictionary(questions.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let grouped = Dictionary(grouping: answers) { answer in
+            questionMap[answer.questionID]?.category ?? "other"
+        }
+
+        return grouped.map { category, categoryAnswers in
+            let scoredAnswers = categoryAnswers.compactMap { answer -> AnswerWithTruth? in
+                guard let question = questionMap[answer.questionID] else { return nil }
+                return AnswerWithTruth(
+                    lower50: answer.lower50,
+                    upper50: answer.upper50,
+                    lower90: answer.lower90,
+                    upper90: answer.upper90,
+                    pointEstimate: answer.pointEstimate,
+                    truth: question.groundTruthValue
+                )
+            }
+            return DomainCalibration(
+                category: category,
+                result: CalibrationEngine.calibrationResult(answers: scoredAnswers),
+                answerCount: scoredAnswers.count
+            )
+        }
+        .sorted { $0.category.localizedCaseInsensitiveCompare($1.category) == .orderedAscending }
+    }
+
+    private var domainBreakdownSection: some View {
+        PremiumLockOverlay(isLocked: !premiumStore.isPremium) {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Domain Breakdown")
+                    .font(.headline)
+                    .fontWeight(.bold)
+
+                if domainBreakdown.isEmpty {
+                    Text("Complete questions to compare calibration by category.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(domainBreakdown) { domain in
+                        HStack {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(domain.displayName)
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                Text("\(domain.answerCount) answer\(domain.answerCount == 1 ? "" : "s")")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            switch domain.result {
+                            case .insufficient:
+                                Text("Need \(max(0, Constants.Calibration.minimumSampleSize - domain.answerCount)) more")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            case .result(let data):
+                                Text(String(format: "%.0f", data.score))
+                                    .font(.title3.bold())
+                                    .foregroundStyle(calibrationColor(score: data.score))
+                                    .accessibilityLabel("Calibration score \(Int(data.score.rounded())) out of 100")
+                            }
+                        }
+                        if domain.id != domainBreakdown.last?.id {
+                            Divider()
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(.secondarySystemBackground))
+            )
+        }
+    }
+
     // MARK: - Leaderboard Rank Card
 
     private var leaderboardRankCard: some View {
@@ -477,6 +557,22 @@ struct CalibrationDashboardView: View {
         if error <= 0.10 { return .green }
         if error <= 0.25 { return .orange }
         return .red
+    }
+}
+
+private struct DomainCalibration: Identifiable {
+    let category: String
+    let result: CalibrationResult
+    let answerCount: Int
+
+    var id: String { category }
+
+    var displayName: String {
+        switch category {
+        case "popCulture": return "Pop Culture"
+        case "currentEvents": return "Current Events"
+        default: return category.capitalized
+        }
     }
 }
 

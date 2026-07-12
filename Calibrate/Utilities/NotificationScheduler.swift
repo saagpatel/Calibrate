@@ -3,17 +3,33 @@ import UserNotifications
 
 struct NotificationScheduler {
 
-    /// Requests notification permissions and schedules the daily reminder if granted.
-    static func requestPermissionAndSchedule() async {
+    /// Requests notification permission in response to an explicit user action.
+    /// Returns whether the reminder was enabled.
+    static func enableDailyReminder() async -> Bool {
         let center = UNUserNotificationCenter.current()
         do {
             let granted = try await center.requestAuthorization(options: [.alert, .sound, .badge])
             if granted {
                 scheduleDailyReminder()
             }
+            return granted
         } catch {
-            // Permission request failed — no crash, no retry.
+            return false
         }
+    }
+
+    /// Restores an existing opt-in without prompting again at launch.
+    static func scheduleIfAuthorized() async {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        guard settings.authorizationStatus == .authorized ||
+              settings.authorizationStatus == .provisional else { return }
+        scheduleDailyReminder()
+    }
+
+    static func disableDailyReminder() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(
+            withIdentifiers: [Constants.Notifications.dailyCategoryID]
+        )
     }
 
     /// Removes any existing daily reminder and schedules a new one at the configured hour and minute.

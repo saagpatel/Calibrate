@@ -4,11 +4,13 @@ import SwiftData
 struct SettingsView: View {
     @EnvironmentObject private var premiumStore: PremiumStore
     @AppStorage(Constants.UserDefaultsKeys.isAdminMode) private var isAdminMode = false
+    @AppStorage(Constants.UserDefaultsKeys.dailyReminderEnabled) private var dailyReminderEnabled = false
     @Query(filter: #Predicate<Question> { $0.isApproved == true })
     private var approvedQuestions: [Question]
     @State private var tapCount = 0
     @State private var tapResetTask: Task<Void, Never>?
     @State private var showUpgrade = false
+    @State private var reminderError: String?
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0"
@@ -63,6 +65,27 @@ struct SettingsView: View {
                 }
             }
 
+            Section {
+                Toggle("Daily 8:00 AM Reminder", isOn: $dailyReminderEnabled)
+                    .onChange(of: dailyReminderEnabled) { _, enabled in
+                        Task {
+                            if enabled {
+                                let granted = await NotificationScheduler.enableDailyReminder()
+                                if !granted {
+                                    dailyReminderEnabled = false
+                                    reminderError = "Notifications are disabled. You can allow them in Settings to use the daily reminder."
+                                }
+                            } else {
+                                NotificationScheduler.disableDailyReminder()
+                            }
+                        }
+                    }
+            } header: {
+                Text("Reminders")
+            } footer: {
+                Text("The reminder is scheduled locally on this device. Calibrate does not use remote push notifications.")
+            }
+
             if isAdminMode {
                 Section("Admin") {
                     NavigationLink("Question Manager") {
@@ -81,6 +104,14 @@ struct SettingsView: View {
         .sheet(isPresented: $showUpgrade) {
             PremiumUpgradeView()
                 .environmentObject(premiumStore)
+        }
+        .alert("Reminder Unavailable", isPresented: Binding(
+            get: { reminderError != nil },
+            set: { if !$0 { reminderError = nil } }
+        )) {
+            Button("OK") { reminderError = nil }
+        } message: {
+            Text(reminderError ?? "Notifications are unavailable.")
         }
     }
 }

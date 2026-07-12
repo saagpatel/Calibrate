@@ -24,16 +24,22 @@ struct ImportService {
         let data = try Data(contentsOf: url)
         let decoded = try JSONDecoder().decode([QuestionJSON].self, from: data)
 
+        for (index, item) in decoded.enumerated() {
+            try validate(item, at: index)
+        }
+
         // Fetch existing question texts to deduplicate
         let descriptor = FetchDescriptor<Question>()
         let existing = try modelContext.fetch(descriptor)
-        let existingTexts = Set(existing.map(\.text))
+        var existingTexts = Set(existing.map { $0.text.trimmingCharacters(in: .whitespacesAndNewlines) })
 
         var importedCount = 0
         for item in decoded {
-            guard !existingTexts.contains(item.text) else { continue }
+            let normalizedText = item.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !existingTexts.contains(normalizedText) else { continue }
 
             let question = Question(
+                id: stableQuestionID(text: item.text, category: item.category),
                 text: item.text,
                 category: item.category,
                 groundTruthValue: item.groundTruthValue,
@@ -46,21 +52,63 @@ struct ImportService {
                 isApproved: autoApprove
             )
             modelContext.insert(question)
+            existingTexts.insert(normalizedText)
             importedCount += 1
         }
 
         try modelContext.save()
         return importedCount
     }
+
+    /// Matches scripts/question_generator.py: UUID(int=FNV1a(text + category)).
+    private static func stableQuestionID(text: String, category: String) -> UUID {
+        let hash = StableHash.fnv1a(text + category)
+        let hex = String(format: "%016llx", hash)
+        let split = hex.index(hex.startIndex, offsetBy: 4)
+        let uuidString = "00000000-0000-0000-\(hex[..<split])-\(hex[split...])"
+        // The format above is constructed from exactly 16 hexadecimal digits.
+        return UUID(uuidString: uuidString) ?? UUID()
+    }
+
+    private static func validate(_ item: QuestionJSON, at index: Int) throws {
+        let allowedCategories = Set(["geography", "science", "economics", "history", "popCulture", "currentEvents"])
+        guard !item.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw ImportError.invalidQuestion(index: index, reason: "question text is empty")
+        }
+        guard !item.explanation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw ImportError.invalidQuestion(index: index, reason: "explanation is empty")
+        }
+        guard !item.groundTruthUnit.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw ImportError.invalidQuestion(index: index, reason: "ground-truth unit is empty")
+        }
+        guard item.groundTruthValue.isFinite else {
+            throw ImportError.invalidQuestion(index: index, reason: "ground-truth value is not finite")
+        }
+        guard allowedCategories.contains(item.category) else {
+            throw ImportError.invalidQuestion(index: index, reason: "unsupported category \(item.category)")
+        }
+        guard let sourceURL = URL(string: item.sourceURL),
+              sourceURL.scheme?.lowercased() == "https",
+              sourceURL.host != nil else {
+            throw ImportError.invalidQuestion(index: index, reason: "source URL must be an absolute HTTPS URL")
+        }
+        let difficulty = item.estimatedDifficulty ?? item.difficulty ?? 0.5
+        guard difficulty.isFinite, (0...1).contains(difficulty) else {
+            throw ImportError.invalidQuestion(index: index, reason: "difficulty must be between 0 and 1")
+        }
+    }
 }
 
 enum ImportError: LocalizedError {
     case fileNotFound(String)
+    case invalidQuestion(index: Int, reason: String)
 
     var errorDescription: String? {
         switch self {
         case .fileNotFound(let name):
             return "Could not find \(name) in app bundle."
+        case .invalidQuestion(let index, let reason):
+            return "Question \(index + 1) is invalid: \(reason)."
         }
     }
 }
@@ -97,7 +145,14 @@ private struct QuestionJSON: Decodable {
 
         // Parse date string "YYYY-MM-DD" if present
         if let dateString = try container.decodeIfPresent(String.self, forKey: .groundTruthDate) {
-            groundTruthDate = DateUtils.parseUTC(dateString: dateString)
+            guard let parsedDate = DateUtils.parseUTC(dateString: dateString) else {
+                throw DecodingError.dataCorruptedError(
+                    forKey: .groundTruthDate,
+                    in: container,
+                    debugDescription: "groundTruthDate must use YYYY-MM-DD"
+                )
+            }
+            groundTruthDate = parsedDate
         } else {
             groundTruthDate = nil
         }

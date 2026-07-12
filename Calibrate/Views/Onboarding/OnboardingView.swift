@@ -24,6 +24,21 @@ struct OnboardingView: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
             .indexViewStyle(.page(backgroundDisplayMode: .always))
+            .overlay(alignment: .bottomTrailing) {
+                if selectedPage < 2 {
+                    Button {
+                        withAnimation { selectedPage += 1 }
+                    } label: {
+                        Label("Next", systemImage: "chevron.right")
+                            .labelStyle(.titleAndIcon)
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .buttonStyle(.bordered)
+                    .padding(.trailing, 24)
+                    .padding(.bottom, 22)
+                    .accessibilityHint("Shows the next onboarding page")
+                }
+            }
             .navigationDestination(isPresented: $navigateToTutorial) {
                 TutorialQuestionView()
             }

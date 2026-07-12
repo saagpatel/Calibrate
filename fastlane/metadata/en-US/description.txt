@@ -45,4 +45,4 @@ Questions refresh at midnight UTC. The same set goes to every player on a given 
 
 Privacy
 
-Calibrate has no advertising. Your answer history is stored in your own iCloud private container — Calibrate's servers never see your individual answers. Only your aggregated calibration score and display name are shared with the public leaderboard. No tracking, no third-party SDKs.
+Calibrate has no advertising or cross-app tracking. Answer history and profile data sync through your private CloudKit database. Leaderboard and friend-group participation publishes your chosen display name and game statistics through the app's public CloudKit database. See the privacy policy for details.
