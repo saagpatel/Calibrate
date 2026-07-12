@@ -21,6 +21,7 @@ scripts/__pycache__/
 # Generated question files
 pending_review.json
 scripts/pending_review.json
+fastlane/report.xml
 
 # macOS
 .DS_Store

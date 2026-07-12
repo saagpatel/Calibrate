@@ -6,7 +6,7 @@
 |---|---|
 | Name | Calibrate |
 | Subtitle | Train Your Prediction Accuracy |
-| Bundle ID | com.calibrate.app |
+| Bundle ID | com.calibrat.app |
 | SKU | CALIBRATE-001 |
 | Primary Category | Education |
 | Secondary Category | Games |
@@ -76,11 +76,11 @@ Premium is available as a monthly subscription ($2.99/month with 3-day free tria
 
 **Daily rhythm**
 
-Questions refresh at midnight UTC. The same set goes to every player on a given day, which means your score on today's set is directly comparable to everyone else's. Push notifications are available (opt-in) to remind you when your daily set is ready.
+Questions refresh at midnight UTC. The same set goes to every player on a given day, which means your score on today's set is directly comparable to everyone else's. An optional local notification can remind you at 8:00 AM.
 
 **Privacy**
 
-Calibrate has no advertising. Your answer history is stored in your own iCloud private container — Calibrate's servers never see your individual answers. Only your aggregated calibration score and display name are shared with the public leaderboard. No tracking, no third-party SDKs.
+Calibrate has no advertising or cross-app tracking. Answer history and profile data sync through the user's private CloudKit database. A chosen display name, calibration score, answer count, premium badge state, and CloudKit-generated identifier are published when leaderboard or friend-group features are used. See the privacy policy for the complete data flow.
 
 ---
 
@@ -101,10 +101,10 @@ Character count: 124
 | Field | URL |
 |---|---|
 | Support URL | https://github.com/saagpatel/Calibrate/issues |
-| Marketing URL | https://[placeholder]/calibrate |
+| Marketing URL | https://github.com/saagpatel/Calibrate |
 | Privacy Policy URL | https://github.com/saagpatel/Calibrate/blob/main/PRIVACY.md |
 
-*Replace with actual URLs before submission. The privacy policy must address: iCloud private database for answer history, CloudKit public database for leaderboard display name + calibration score, no third-party data sharing, StoreKit 2 subscription handling.*
+The privacy policy addresses private and public CloudKit data, StoreKit processing, local notifications, tracking, retention, and deletion requests.
 
 ---
 
@@ -170,7 +170,7 @@ Character count: 124
 
 **In-App Purchase restore:** A "Restore Purchases" button is present on the Premium Upgrade view. Tapping it re-verifies the current StoreKit 2 entitlement.
 
-**Push notifications:** The app requests notification permission on first launch (after onboarding). A daily notification fires at 8:00 AM local time. Testing via Xcode's Simulator notification trigger is the recommended approach during review.
+**Local notifications:** The app does not prompt on first launch. A user can opt in with the "Daily 8:00 AM Reminder" toggle in Settings. The notification is scheduled locally; no remote push server or Push Notifications entitlement is used.
 
 ---
 
@@ -199,7 +199,7 @@ Character count: 124
 - [ ] Privacy manifest (`PrivacyInfo.xcprivacy`): declares leaderboard display name + score go to public CloudKit DB; answer history stays in user's private CloudKit DB; no tracking; no advertising; StoreKit 2 only (no payment data handled by app)
 - [ ] CloudKit container `iCloud.com.calibrate.app` added to Capabilities and entitlements
 - [ ] iCloud capability: CloudKit checked, container ID correct
-- [ ] Push Notifications capability enabled (for daily local notifications — no remote push server used)
+- [x] Local reminder requires no Push Notifications capability; permission is requested only from the Settings toggle
 - [ ] StoreKit 2 products `com.calibrate.premium.monthly` and `com.calibrate.premium.annual` in "Ready to Submit" state in App Store Connect before submitting the binary
 - [ ] App icon in all required sizes (1024×1024 source in asset catalog)
 - [ ] Version 1.0, build number set

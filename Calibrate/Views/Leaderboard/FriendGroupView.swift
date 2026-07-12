@@ -35,6 +35,7 @@ private struct FriendGroup {
 private enum FriendGroupError: LocalizedError {
     case notAuthenticated
     case groupNotFound
+    case groupFull
     case network(Error)
     case unknown(Error)
 
@@ -44,6 +45,8 @@ private enum FriendGroupError: LocalizedError {
             return "Sign in to iCloud in Settings to use Friend Groups."
         case .groupNotFound:
             return "Group code not found. Check the code and try again."
+        case .groupFull:
+            return "This friend group already has 50 members."
         case .network(let underlying):
             return "Network error: \(underlying.localizedDescription)"
         case .unknown(let underlying):
@@ -52,6 +55,9 @@ private enum FriendGroupError: LocalizedError {
     }
 
     static func from(_ error: Error) -> FriendGroupError {
+        if let friendGroupError = error as? FriendGroupError {
+            return friendGroupError
+        }
         guard let ckError = error as? CKError else {
             return .unknown(error)
         }
@@ -359,17 +365,7 @@ struct FriendGroupView: View {
 
         do {
             let myRecordName = try await userRecordName()
-            let groupID = generateGroupCode()
-
-            let db = Self.db
-            let recordID = CKRecord.ID(recordName: groupID)
-            let record = CKRecord(recordType: Constants.CloudKit.friendGroupRecordType, recordID: recordID)
-            record["groupID"] = groupID
-            record["groupName"] = "Group \(groupID)"
-            record["memberRecordNames"] = [myRecordName] as [String]
-            record["createdBy"] = myRecordName
-            record["createdAt"] = Date()
-            try await db.save(record)
+            let groupID = try await createUniqueGroup(ownerRecordName: myRecordName)
 
             currentGroupID = groupID
 
@@ -392,22 +388,7 @@ struct FriendGroupView: View {
 
         do {
             let myRecordName = try await userRecordName()
-            let db = Self.db
-            let recordID = CKRecord.ID(recordName: code)
-            let record = try await db.record(for: recordID)
-
-            var members = record["memberRecordNames"] as? [String] ?? []
-            guard !members.contains(myRecordName) else {
-                // Already a member — just load the group
-                currentGroupID = code
-                joinCode = ""
-                await refresh()
-                return
-            }
-
-            members.append(myRecordName)
-            record["memberRecordNames"] = members as [String]
-            try await db.save(record)
+            try await updateMembership(groupID: code, userRecordName: myRecordName, shouldJoin: true)
 
             currentGroupID = code
             joinCode = ""
@@ -419,6 +400,8 @@ struct FriendGroupView: View {
                 joinError = "Group code not found."
             case .notAuthenticated:
                 pageError = .notAuthenticated
+            case .groupFull:
+                joinError = mapped.errorDescription
             default:
                 joinError = mapped.errorDescription ?? "Something went wrong."
             }
@@ -433,14 +416,11 @@ struct FriendGroupView: View {
 
         do {
             let myRecordName = try await userRecordName()
-            let db = Self.db
-            let recordID = CKRecord.ID(recordName: group.groupID)
-            let record = try await db.record(for: recordID)
-
-            var members = record["memberRecordNames"] as? [String] ?? []
-            members.removeAll { $0 == myRecordName }
-            record["memberRecordNames"] = members as [String]
-            try await db.save(record)
+            try await updateMembership(
+                groupID: group.groupID,
+                userRecordName: myRecordName,
+                shouldJoin: false
+            )
 
             currentGroupID = ""
             self.group = nil
@@ -482,6 +462,61 @@ struct FriendGroupView: View {
         async let allEntries = LeaderboardService.fetchLeaderboard()
         let entries = try await allEntries
         return entries.filter { members.contains($0.id) }
+    }
+
+    private func createUniqueGroup(ownerRecordName: String) async throws -> String {
+        for _ in 0..<5 {
+            let groupID = generateGroupCode()
+            let recordID = CKRecord.ID(recordName: groupID)
+            let record = CKRecord(
+                recordType: Constants.CloudKit.friendGroupRecordType,
+                recordID: recordID
+            )
+            record["groupID"] = groupID
+            record["groupName"] = "Group \(groupID)"
+            record["memberRecordNames"] = [ownerRecordName] as [String]
+            record["createdBy"] = ownerRecordName
+            record["createdAt"] = Date()
+
+            do {
+                _ = try await Self.db.save(record)
+                return groupID
+            } catch let error as CKError where error.code == .serverRecordChanged {
+                continue
+            }
+        }
+        throw CKError(.serviceUnavailable)
+    }
+
+    private func updateMembership(
+        groupID: String,
+        userRecordName: String,
+        shouldJoin: Bool,
+        retryCount: Int = 0
+    ) async throws {
+        let recordID = CKRecord.ID(recordName: groupID)
+        let record = try await Self.db.record(for: recordID)
+        var members = record["memberRecordNames"] as? [String] ?? []
+
+        if shouldJoin {
+            guard !members.contains(userRecordName) else { return }
+            guard members.count < 50 else { throw FriendGroupError.groupFull }
+            members.append(userRecordName)
+        } else {
+            members.removeAll { $0 == userRecordName }
+        }
+
+        record["memberRecordNames"] = members as [String]
+        do {
+            _ = try await Self.db.save(record)
+        } catch let error as CKError where error.code == .serverRecordChanged && retryCount < 3 {
+            try await updateMembership(
+                groupID: groupID,
+                userRecordName: userRecordName,
+                shouldJoin: shouldJoin,
+                retryCount: retryCount + 1
+            )
+        }
     }
 
     // MARK: - Utilities
@@ -682,6 +717,7 @@ extension FriendGroupError: Equatable {
         switch (lhs, rhs) {
         case (.notAuthenticated, .notAuthenticated): return true
         case (.groupNotFound, .groupNotFound): return true
+        case (.groupFull, .groupFull): return true
         case (.network, .network): return true
         case (.unknown, .unknown): return true
         default: return false

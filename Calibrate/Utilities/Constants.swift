@@ -18,6 +18,12 @@ enum Constants {
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
         static let isAdminMode = "isAdminMode"
         static let hasSeededQuestions = "hasSeededQuestions"
+        static let dailyReminderEnabled = "dailyReminderEnabled"
+    }
+
+    enum Legal {
+        static let privacyPolicyURL = "https://github.com/saagpatel/Calibrate/blob/main/PRIVACY.md"
+        static let termsOfUseURL = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
     }
 
     enum Notifications {

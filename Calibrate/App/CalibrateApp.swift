@@ -1,10 +1,10 @@
 import SwiftUI
 import SwiftData
-import CloudKit
 
 @main
 struct CalibrateApp: App {
     let modelContainer: ModelContainer
+    let storageWarning: String?
     @StateObject private var premiumStore = PremiumStore()
 
     init() {
@@ -24,17 +24,25 @@ struct CalibrateApp: App {
         )
         do {
             modelContainer = try ModelContainer(for: schema, configurations: [configuration])
+            storageWarning = nil
         } catch {
-            fatalError("Failed to create ModelContainer: \(error)")
+            do {
+                let fallback = ModelConfiguration(
+                    schema: schema,
+                    isStoredInMemoryOnly: true,
+                    cloudKitDatabase: .none
+                )
+                modelContainer = try ModelContainer(for: schema, configurations: [fallback])
+                storageWarning = "Calibrate could not open its saved data. You can keep using this session, but new progress will not be preserved after the app closes."
+            } catch {
+                fatalError("Failed to create persistent or temporary ModelContainer: \(error)")
+            }
         }
-
-        // Register CloudKit container so it appears in CloudKit Dashboard
-        _ = CKContainer(identifier: Constants.CloudKit.containerID)
     }
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(storageWarning: storageWarning)
                 .environmentObject(premiumStore)
                 .task {
                     await seedAndSetupIfNeeded()
@@ -56,23 +64,20 @@ struct CalibrateApp: App {
                     into: context
                 )
                 print("[Calibrate] Seeded \(count) questions")
-            } catch {
-                print("[Calibrate] Seed import failed: \(error)")
-            }
-
-            do {
                 let profiles = try context.fetch(FetchDescriptor<UserProfile>())
                 if profiles.isEmpty {
                     context.insert(UserProfile(displayName: "Player"))
                     try context.save()
                 }
+                UserDefaults.standard.set(true, forKey: Constants.UserDefaultsKeys.hasSeededQuestions)
             } catch {
-                print("[Calibrate] UserProfile setup failed: \(error)")
+                // Leave the flag unset so the idempotent setup retries next launch.
+                print("[Calibrate] Initial content setup failed: \(error)")
             }
-
-            UserDefaults.standard.set(true, forKey: Constants.UserDefaultsKeys.hasSeededQuestions)
         }
 
-        await NotificationScheduler.requestPermissionAndSchedule()
+        if UserDefaults.standard.bool(forKey: Constants.UserDefaultsKeys.dailyReminderEnabled) {
+            await NotificationScheduler.scheduleIfAuthorized()
+        }
     }
 }

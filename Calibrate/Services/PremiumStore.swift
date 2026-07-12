@@ -1,7 +1,7 @@
 import StoreKit
 import OSLog
 
-private let logger = Logger(subsystem: "com.calibrate.app", category: "PremiumStore")
+private let logger = Logger(subsystem: "com.calibrat.app", category: "PremiumStore")
 
 @MainActor
 final class PremiumStore: ObservableObject {
