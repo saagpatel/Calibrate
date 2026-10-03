@@ -36,6 +36,34 @@ Build and run the `Calibrate` scheme on your device or simulator from Xcode.
 
 CloudKit-backed sync and leaderboards require a signed build with the app's iCloud entitlement. Core gameplay falls back to the bundled question bank when CloudKit is unavailable.
 
+## Verification
+
+Run from the repository root on macOS with Xcode 16+ selected (`xcode-select -p`),
+its iOS SDK, and an installed iPhone simulator runtime. This is an Xcode project,
+not a Swift package. The unsigned simulator lane mirrors [CI](.github/workflows/ci.yml)
+and needs no Apple Developer account:
+
+```bash
+plutil -lint Calibrate/Info.plist Calibrate/PrivacyInfo.xcprivacy Calibrate/Calibrate.entitlements ExportOptions.plist
+make build
+xcrun simctl list devices available
+# Replace the UUID below with an available iPhone simulator from that list.
+make test SIMULATOR_ID='paste-available-uuid-here' TEST_FLAGS='-only-testing:CalibrateTests/CalibrationEngineTests'
+make test SIMULATOR_ID='paste-available-uuid-here'
+```
+
+`make build` compiles Release for a generic iOS Simulator; `make test` runs the
+focused class or full `CalibrateTests` suite. Derived data stays in
+`.build/DerivedData`. There is no separate configured Swift lint command;
+`plutil` checks resource syntax, while the compiler and tests cover Swift changes.
+
+For SwiftUI changes, manually build/run the scheme in Xcode on a simulator and
+check the affected navigation, layout, and accessibility. Unit tests do not prove
+that UI flow. Signed CloudKit, StoreKit, and notification behavior require their
+own authorized manual checks. Do not use the question generator's API generation
+or CloudKit upload as a verification smoke test: those can consume API credits or
+change provider data. `make run` opens the project for manual use.
+
 ## Privacy
 
 Calibrate uses private and public CloudKit databases for sync, leaderboard, and friend-group features. See [PRIVACY.md](PRIVACY.md) for the exact data flows. The app has no advertising SDKs or cross-app tracking.
