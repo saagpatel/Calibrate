@@ -10,11 +10,11 @@ Calibrate is a daily iOS prediction game that measures and trains your calibrati
 
 - **Daily 5-question rounds** — fresh numeric estimation questions each day
 - **Dual scoring** — Calibration Score (interval accuracy) and Knowledge Score (point-estimate MAPE) tracked independently
-- **Swift Charts visualization** — score history, confidence interval hit rates, and performance trends
-- **CloudKit sync** — answers and scores sync privately across your devices
+- **Swift Charts visualization** — premium calibration curve comparing stated confidence with observed interval hit rates
+- **CloudKit uploads** — answers and profile data (including calibration score) upload to the private database; calibration scores are also published to the public leaderboard; cross-device restore is not implemented
 - **StoreKit 2 subscriptions** — monthly ($2.99) and annual ($14.99) plans unlocking premium features (calibration curve, friend groups, domain breakdown)
 - **Optional local reminder** — user-controlled 8:00 AM notification with no remote push service
-- **Global leaderboard** — CloudKit-backed top-100 rankings by calibration score with personal rank display
+- **Global leaderboard** — fetches up to 100 CloudKit entries by calibration score, displays the top 20, and shows personal rank within the fetched entries when present
 - **Python question CLI** — Anthropic SDK-powered authoring tool (dev-time only, not shipped)
 
 ## Quick Start
@@ -34,7 +34,7 @@ open Calibrate.xcodeproj
 ### Usage
 Build and run the `Calibrate` scheme on your device or simulator from Xcode.
 
-CloudKit-backed sync and leaderboards require a signed build with the app's iCloud entitlement. Core gameplay falls back to the bundled question bank when CloudKit is unavailable.
+CloudKit uploads, question delivery, and leaderboards require a signed build with the app's iCloud entitlement. Core gameplay falls back to the bundled question bank when CloudKit is unavailable.
 
 ## Verification
 
@@ -66,7 +66,7 @@ change provider data. `make run` opens the project for manual use.
 
 ## Privacy
 
-Calibrate uses private and public CloudKit databases for sync, leaderboard, and friend-group features. See [PRIVACY.md](PRIVACY.md) for the exact data flows. The app has no advertising SDKs or cross-app tracking.
+Calibrate uses private and public CloudKit databases for answer/profile uploads, question delivery, leaderboard, and friend-group features. See [PRIVACY.md](PRIVACY.md) for the exact data flows. The app has no advertising SDKs or cross-app tracking.
 
 ## Tech Stack
 
@@ -75,7 +75,7 @@ Calibrate uses private and public CloudKit databases for sync, leaderboard, and 
 | Language | Swift 6.0 (strict concurrency) |
 | UI | SwiftUI (iOS 17+) |
 | Local persistence | SwiftData |
-| Remote sync | CloudKit (private + public containers) |
+| Remote data | CloudKit (public reads/writes, private answer/profile uploads) |
 | In-app purchase | StoreKit 2 |
 | Charts | Swift Charts |
 

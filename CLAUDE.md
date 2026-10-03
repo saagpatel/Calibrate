@@ -4,7 +4,7 @@ Daily iOS prediction game: users submit 50% and 90% confidence intervals for 5 n
 
 ## Stack
 - Swift 6.0 (strict concurrency enabled), SwiftUI, iOS 17.0+ deployment target
-- Local persistence: SwiftData; remote sync: CloudKit (iCloud private + public containers)
+- Local persistence: SwiftData; remote data: CloudKit (public reads/writes, private answer/profile uploads; no cross-device restore)
 - IAP: StoreKit 2; Charts: Swift Charts (iOS 16+)
 - Question generation: Python 3.12 + Anthropic SDK — local CLI only, not shipped in app
 - CloudKit container ID: `iCloud.com.calibrate.app`
@@ -18,7 +18,7 @@ Unit tests required for CalibrationEngine and DateUtils before any dependent UI 
 |----------|--------|-----|
 | Backend | CloudKit only | Zero infrastructure cost, iCloud auth built-in, iOS-native |
 | Confidence levels | 50% + 90% intervals | Richer calibration data; two data points per question |
-| Daily set assignment | Date-keyed, UTC-based, same for all users | Enables direct social comparison |
+| Daily set assignment | Date-keyed, UTC-based; shared CloudKit sets, local fallback deterministic for the same approved question bank | Enables direct social comparison |
 | Answer reveal | After all 5 (batch reveal) | Report-card moment; prevents late-question anchoring |
 | Point estimate | Tracked as "Knowledge Score" separately | Two-axis competition; doesn't pollute calibration ranking |
 | Admin UI | In-app, hidden behind 5-tap gesture on version label | Zero infrastructure; solo curator |
@@ -28,15 +28,15 @@ Unit tests required for CalibrationEngine and DateUtils before any dependent UI 
 
 ## Conventions
 - SwiftUI only; UIKit allowed only for custom gesture recognizers where no SwiftUI equivalent exists.
-- All async operations use Swift concurrency (async/await, actors) — Combine is not used.
-- SwiftData models are the single source of truth for local state; CloudKit is sync layer only.
+- Async operations use Swift concurrency (async/await, actors); PremiumStore uses Combine observation (ObservableObject and @Published), not Combine async pipelines.
+- SwiftData models are the source of truth for local gameplay data; CloudKit supplies public questions and stores uploaded answers/profiles, leaderboard entries, and friend groups. Settings use UserDefaults; StoreKit is the source of truth for premium access.
 - File naming: PascalCase for types and views, camelCase for functions and properties.
 - Force unwraps (`!`) are not permitted — use guard/if-let or provide safe defaults.
 
 ## Scoped Gates
 - **Scope gate:** Build only what the current phase of IMPLEMENTATION-ROADMAP.md specifies; leaderboard, friend groups, and StoreKit integration are Phase 2+ only.
 - **CloudKit write gate:** App writes to the CloudKit public DB only for leaderboard entries and friend groups (Phase 2+). All other app writes go to the private container.
-- **Interval validation gate:** Confirm the 90% interval contains the 50% interval in IntervalInputWidget binding logic — not on submit. The app must not proceed if this invariant fails.
+- **Interval validation gate:** Confirm the 90% interval contains the 50% interval through IntervalInputWidget validation and QuestionCardView.widgetIsValid, which disables lock-in for invalid input. The app must not proceed if this invariant fails.
 - **API key gate:** The Claude API key must never appear in the Xcode project — it belongs to the local Python CLI only.
 
 <!-- portfolio-context:start -->
@@ -55,7 +55,7 @@ Calibrate is a daily iOS prediction game where users submit 50% and 90% confiden
 - Language: Swift 6.0 (strict concurrency enabled)
 - UI: SwiftUI (iOS 17.0+ deployment target)
 - Local persistence: SwiftData (iOS 17)
-- Remote sync: CloudKit (iCloud private + public containers)
+- Remote data: CloudKit (public reads/writes, private answer/profile uploads; no cross-device restore)
 - IAP: StoreKit 2
 - Charts: Swift Charts (iOS 16+)
 - Question generation: Python 3.12 + Anthropic SDK (local CLI, not shipped in app)
@@ -70,8 +70,8 @@ Build and run the `Calibrate` scheme on your device or simulator from Xcode.
 - Do not use UIKit components when a SwiftUI equivalent exists
 - Do not store the Claude API key anywhere in the Xcode project — it's a local Python CLI tool only
 - Do not write to CloudKit public DB from the app except for leaderboard entries and friend groups (Phase 2+)
-- Do not use Combine — Swift concurrency only
-- Do not allow the app to proceed without confirming the 90% interval contains the 50% interval (enforce in IntervalInputWidget binding logic, not on submit)
+- Do not use Combine for async work — Swift concurrency only (exception: PremiumStore's ObservableObject/@Published observation)
+- Do not allow the app to proceed without confirming the 90% interval contains the 50% interval (validate in IntervalInputWidget and disable lock-in via QuestionCardView.widgetIsValid)
 - Do not build the leaderboard, friend groups, or StoreKit integration in Phase 0 or Phase 1
 - Do not use force unwraps — zero tolerance
 
