@@ -4,7 +4,7 @@
 
 | Field | Value |
 |---|---|
-| Name | Calibrate |
+| Name | Calibrate: Forecast Trainer |
 | Subtitle | Train Your Prediction Accuracy |
 | Bundle ID | com.calibrat.app |
 | SKU | CALIBRATE-001 |
