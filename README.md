@@ -36,6 +36,10 @@ Build and run the `Calibrate` scheme on your device or simulator from Xcode.
 
 CloudKit-backed sync and leaderboards require a signed build with the app's iCloud entitlement. Core gameplay falls back to the bundled question bank when CloudKit is unavailable.
 
+The app bundle ID is `com.calibrat.app`; tests use `com.calibrat.app.CalibrateTests`.
+The existing CloudKit container remains `iCloud.com.calibrate.app` and subscription
+product IDs remain `com.calibrate.premium.monthly` and `com.calibrate.premium.annual`.
+
 ## Verification
 
 Run from the repository root on macOS with Xcode 16+ selected (`xcode-select -p`),
