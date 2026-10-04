@@ -1,6 +1,6 @@
 name: Calibrate
 options:
-  bundleIdPrefix: com.calibrate
+  bundleIdPrefix: com.calibrat.app
   deploymentTarget:
     iOS: "17.0"
   xcodeVersion: "16.0"
@@ -11,6 +11,7 @@ settings:
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
     DEVELOPMENT_TEAM: 3TGZFKFNA4
+    CURRENT_PROJECT_VERSION: 2
 
 targets:
   Calibrate:
@@ -20,11 +21,11 @@ targets:
       - path: Calibrate
         excludes:
           - "**/*.xcassets/*/Contents.json"
+          - "**/*.storekit"
     resources:
       - path: Calibrate/Resources/Assets.xcassets
       - path: Calibrate/Resources/seed_questions.json
         optional: true
-      - path: Calibrate/Resources/Products.storekit
     settings:
       base:
         INFOPLIST_FILE: Calibrate/Info.plist
@@ -50,6 +51,7 @@ targets:
     settings:
       base:
         INFOPLIST_FILE: CalibrateTests/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.calibrat.app.CalibrateTests
 
 schemes:
   Calibrate:

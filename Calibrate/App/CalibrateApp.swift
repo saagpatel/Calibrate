@@ -58,12 +58,14 @@ struct CalibrateApp: App {
 
         if !UserDefaults.standard.bool(forKey: Constants.UserDefaultsKeys.hasSeededQuestions) {
             do {
-                let count = try ImportService.importFromBundle(
+                _ = try ImportService.importFromBundle(
                     filename: "seed_questions",
                     autoApprove: true,
                     into: context
                 )
-                print("[Calibrate] Seeded \(count) questions")
+                #if DEBUG
+                print("[Calibrate] Seeded bundled questions")
+                #endif
                 let profiles = try context.fetch(FetchDescriptor<UserProfile>())
                 if profiles.isEmpty {
                     context.insert(UserProfile(displayName: "Player"))
@@ -72,7 +74,9 @@ struct CalibrateApp: App {
                 UserDefaults.standard.set(true, forKey: Constants.UserDefaultsKeys.hasSeededQuestions)
             } catch {
                 // Leave the flag unset so the idempotent setup retries next launch.
+                #if DEBUG
                 print("[Calibrate] Initial content setup failed: \(error)")
+                #endif
             }
         }
 
