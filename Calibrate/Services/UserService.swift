@@ -73,6 +73,7 @@ struct UserService {
     // MARK: - Private helpers
 
     private static func handleCKError(_ error: Error, context: String) {
+        #if DEBUG
         guard let ckError = error as? CKError else {
             print("\(context): unexpected error: \(error)")
             return
@@ -88,5 +89,6 @@ struct UserService {
         default:
             print("\(context): CloudKit error \(ckError.code.rawValue): \(ckError.localizedDescription)")
         }
+        #endif
     }
 }

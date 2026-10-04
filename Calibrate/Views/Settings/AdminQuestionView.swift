@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 
+#if DEBUG
 struct AdminQuestionView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(filter: #Predicate<Question> { $0.isApproved == false },
@@ -157,3 +158,4 @@ private struct QuestionReviewRow: View {
         AdminQuestionView()
     }
 }
+#endif

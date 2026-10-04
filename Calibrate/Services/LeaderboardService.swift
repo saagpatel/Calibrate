@@ -70,7 +70,9 @@ struct LeaderboardService {
         retrying: Bool
     ) async throws {
         guard let userRecordName = try await fetchUserRecordName() else {
+            #if DEBUG
             print("[LeaderboardService] upsertEntry: not authenticated, skipping")
+            #endif
             return
         }
 
@@ -99,7 +101,9 @@ struct LeaderboardService {
             _ = try await db.save(record)
         } catch let error as CKError where error.code == .serverRecordChanged && !retrying {
             // One retry: server has a newer version — re-fetch and retry
+            #if DEBUG
             print("[LeaderboardService] upsertEntry: server record changed, retrying once")
+            #endif
             try await performUpsert(
                 displayName: displayName,
                 calibrationScore: calibrationScore,
@@ -121,6 +125,7 @@ struct LeaderboardService {
     }
 
     private static func handleCKError(_ error: Error, context: String) {
+        #if DEBUG
         guard let ckError = error as? CKError else {
             print("\(context): unexpected error: \(error)")
             return
@@ -136,5 +141,6 @@ struct LeaderboardService {
         default:
             print("\(context): CloudKit error \(ckError.code.rawValue): \(ckError.localizedDescription)")
         }
+        #endif
     }
 }

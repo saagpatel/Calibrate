@@ -373,7 +373,9 @@ struct FriendGroupView: View {
             await refresh()
         } catch {
             let mapped = FriendGroupError.from(error)
+            #if DEBUG
             print("[FriendGroupView] createGroup error: \(mapped.errorDescription ?? error.localizedDescription)")
+            #endif
             pageError = mapped
         }
     }
@@ -405,7 +407,9 @@ struct FriendGroupView: View {
             default:
                 joinError = mapped.errorDescription ?? "Something went wrong."
             }
+            #if DEBUG
             print("[FriendGroupView] joinGroup error: \(mapped.errorDescription ?? error.localizedDescription)")
+            #endif
         }
     }
 
@@ -427,7 +431,9 @@ struct FriendGroupView: View {
             self.groupEntries = []
         } catch {
             let mapped = FriendGroupError.from(error)
+            #if DEBUG
             print("[FriendGroupView] leaveGroup error: \(mapped.errorDescription ?? error.localizedDescription)")
+            #endif
             // Non-fatal — clear local state anyway so user isn't stuck
             if case .groupNotFound = mapped {
                 currentGroupID = ""

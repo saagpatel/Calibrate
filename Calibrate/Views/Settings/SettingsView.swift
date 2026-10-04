@@ -3,12 +3,16 @@ import SwiftData
 
 struct SettingsView: View {
     @EnvironmentObject private var premiumStore: PremiumStore
+    #if DEBUG
     @AppStorage(Constants.UserDefaultsKeys.isAdminMode) private var isAdminMode = false
+    #endif
     @AppStorage(Constants.UserDefaultsKeys.dailyReminderEnabled) private var dailyReminderEnabled = false
+    #if DEBUG
     @Query(filter: #Predicate<Question> { $0.isApproved == true })
     private var approvedQuestions: [Question]
     @State private var tapCount = 0
     @State private var tapResetTask: Task<Void, Never>?
+    #endif
     @State private var showUpgrade = false
     @State private var reminderError: String?
 
@@ -49,6 +53,7 @@ struct SettingsView: View {
                     Spacer()
                     Text(appVersion)
                         .foregroundStyle(.secondary)
+                        #if DEBUG
                         .onTapGesture {
                             tapCount += 1
                             tapResetTask?.cancel()
@@ -62,6 +67,7 @@ struct SettingsView: View {
                                 tapCount = 0
                             }
                         }
+                        #endif
                 }
             }
 
@@ -86,6 +92,7 @@ struct SettingsView: View {
                 Text("The reminder is scheduled locally on this device. Calibrate does not use remote push notifications.")
             }
 
+            #if DEBUG
             if isAdminMode {
                 Section("Admin") {
                     NavigationLink("Question Manager") {
@@ -99,6 +106,7 @@ struct SettingsView: View {
                     }
                 }
             }
+            #endif
         }
         .navigationTitle("Settings")
         .sheet(isPresented: $showUpgrade) {
